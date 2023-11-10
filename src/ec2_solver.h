@@ -90,7 +90,6 @@ struct ec2_solver: public pic_solver //energy-conserving solver
     }
     void processParticle(particle &P, double charge, double mass, double timeStep, int loopNumber){
         fieldSubMap64 &map(subField[omp_get_thread_num()]);
-        simulationBox &box(field->box);
         int thread = omp_get_thread_num();
         
         double &inv_mc(data[thread][0]);

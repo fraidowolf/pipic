@@ -504,7 +504,6 @@ struct ensemble
                             activeThread.toRemove.clear();
                             activeThread.toRemoveLocal.clear();
                             Solver->startSubLoop(activeThread.CI->i, type[it].charge, type[it].mass, timeStep, 1);
-                            bool init = false;
                             for(int ip = 0; ip < cell[ig][it]->P.size() - cell[ig][it]->endShift; ip++){ 
                                 if(likely(cell[ig][it]->P[ip].w != 0))
                                 {

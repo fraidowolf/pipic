@@ -63,7 +63,6 @@ struct pipic
         int* dataInt_ = nullptr; if(dataInt != 0) dataInt_ = (int*)dataInt;
 
         int typeIndex = Ensemble->getTypeIndex(typeName);
-        double *r; double *p; double *w; unsigned long long int *id;
         for(ensemble::nonOmpIterator iP = Ensemble->begin(typeIndex); iP < Ensemble->end(); iP++){
             particle *P = &*iP;
             handler_(&(P->r.x), &(P->p.x), &(P->w), &(P->id), dataDouble_, dataInt_);
