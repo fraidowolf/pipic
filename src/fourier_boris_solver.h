@@ -10,8 +10,8 @@ struct fourier_boris_solver: public pic_solver
     vector<fieldSubMap64> subField; // local field state, thread-local
     vector<double> inv_mc_, qdt_2_; // thread-local
     int3 n;
-    fourier_boris_solver(simulationBox box): n(box.n), 
-    subField(omp_get_max_threads()), inv_mc_(omp_get_max_threads()), qdt_2_(omp_get_max_threads())
+    fourier_boris_solver(simulationBox box): subField(omp_get_max_threads()), 
+    inv_mc_(omp_get_max_threads()), qdt_2_(omp_get_max_threads()), n(box.n)
     {
         field = new fourierSolver(box, FFTW_PATIENT);
         Field = field;

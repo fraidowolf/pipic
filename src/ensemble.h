@@ -46,9 +46,9 @@ struct loopLayoutStride8x // structure for making a loop with stride 8 along x
     {}
     void makePlan(){
         if(unlikely(!randGen)) {cout << "pi-PIC error: rndGen call before assignment" << endl; exit(0);}
-        for(int i = 0; i < offset.size(); i++) offset[i] = i;
+        for(size_t i = 0; i < offset.size(); i++) offset[i] = i;
         shuffle(begin(offset), end(offset), *randGen);
-        for(int i = 0; i < offset.size(); i++) index[offset[i] + 1] = i;
+        for(size_t i = 0; i < offset.size(); i++) index[offset[i] + 1] = i;
         index[9] = index[1]; index[0] = index[8];
     }
     inline bool unprocessed(int sx){ // returns true if the cell shifted by 'sx' has not been processed
@@ -90,14 +90,14 @@ struct ensemble
     handlerManager Manager;
     rndGen RndGen;
 
-    ensemble(simulationBox box, int stride = 4): box(box), fieldHandlerExists(false), 
-    thread(omp_get_max_threads()), shuffle(true), Manager(box.ng), RndGen(box.n.x)
+    ensemble(simulationBox box, int stride = 4): box(box), thread(omp_get_max_threads()),
+    fieldHandlerExists(false), shuffle(true), Manager(box.ng), RndGen(box.n.x)
     {
         cell = new cellContainer**[box.ng];
         for(unsigned int ig = 0; ig < box.ng; ig++) cell[ig] = nullptr;
         totalNumberOfParticles = 0;
         
-        for(int iTh = 0; iTh < thread.size(); iTh++){
+        for(size_t iTh = 0; iTh < thread.size(); iTh++){
             int *I = new int[14];
             I[3] = box.n.x; I[4] = box.n.y; I[5] = box.n.z;
             I[6] = box.dim; I[7] = sizeof(particle)/8 - 8;
@@ -116,11 +116,11 @@ struct ensemble
     {
         for(unsigned int ig = 0; ig < box.ng; ig++) if(cell[ig] != nullptr)
         {
-            for(int it = 0; it < type.size(); it++) if(cell[ig][it] != nullptr) delete cell[ig][it];
+            for(size_t it = 0; it < type.size(); it++) if(cell[ig][it] != nullptr) delete cell[ig][it];
             delete []cell[ig];
         }
         delete []cell;
-        for(int iTh = 0; iTh < thread.size(); iTh++){
+        for(size_t iTh = 0; iTh < thread.size(); iTh++){
             delete [](thread[iTh].CI->I);
             delete [](thread[iTh].CI->D);
             if(thread[iTh].CI->F_data != nullptr) delete [](thread[iTh].CI->F_data);
@@ -132,7 +132,7 @@ struct ensemble
         if(cell[ig] == nullptr) 
         {
             cell[ig] = new cellContainer*[type.size()];
-            for(int it = 0; it < type.size(); it++) cell[ig][it] = nullptr;
+            for(size_t it = 0; it < type.size(); it++) cell[ig][it] = nullptr;
         }
         if(cell[ig][typeIndex] == nullptr)
         {
@@ -142,7 +142,7 @@ struct ensemble
     void checkPushBack(unsigned int ig, int typeIndex, particle &P){
         if(unlikely(cell[ig] == nullptr)){
             cell[ig] = new cellContainer*[type.size()];
-            for(int it = 0; it < type.size(); it++) cell[ig][it] = nullptr;
+            for(size_t it = 0; it < type.size(); it++) cell[ig][it] = nullptr;
         }
         if(unlikely(cell[ig][typeIndex] == nullptr)){
             cell[ig][typeIndex] = new cellContainer;
@@ -152,7 +152,7 @@ struct ensemble
     int placeParticles(string typeName, int totalNumber, double typeCharge, double typeMass, double temperature, int64_t density, int64_t dataDouble = 0, int64_t dataInt = 0) // returns typeIndex
     {
         int typeIndex = -1; // index of particle type; initial code "-1" is to be changed if typeName is found in typeName, otherwise new type is added below
-        for(int it = 0; it < type.size(); it++) 
+        for(size_t it = 0; it < type.size(); it++) 
         if(typeName == type[it].name)
         if((typeCharge == type[it].charge)&&(typeMass == type[it].mass))
             typeIndex = it; // found among previously defined types
@@ -171,7 +171,7 @@ struct ensemble
             if(cell[box.ig({ix, iy, iz})] != nullptr)
             {
                 cellContainer **newPointers = new cellContainer*[type.size()];
-                for(int it = 0; it < type.size() - 1; it++) newPointers[it] = cell[box.ig({ix, iy, iz})][it];
+                for(size_t it = 0; it < type.size() - 1; it++) newPointers[it] = cell[box.ig({ix, iy, iz})][it];
                 newPointers[type.size() - 1] = nullptr;
                 cellContainer **tmp = cell[box.ig({ix, iy, iz})];
                 cell[box.ig({ix, iy, iz})] = newPointers;
@@ -200,7 +200,7 @@ struct ensemble
         }
     
         double totalRealParticles = 0; // total nuber of real particles
-        for(int i = 0; i < totalRealParticles_.size(); i++) totalRealParticles += totalRealParticles_[i];
+        for(size_t i = 0; i < totalRealParticles_.size(); i++) totalRealParticles += totalRealParticles_[i];
         double weight = totalRealParticles/totalNumber; // estimated weight to be used for all particles
 
         // estimating and reserving memory for particle allocation
@@ -291,7 +291,7 @@ struct ensemble
     }
     template<typename pic_solver, typename field_solver>
     void apply_particleHandlers(int it, pic_solver *Solver, threadData &activeThread, bool &fieldBeenSet, unsigned int ig, bool directOrder){
-        for(int ih = 0; ih < Manager.Handler.size(); ih++)
+        for(size_t ih = 0; ih < Manager.Handler.size(); ih++)
         if(Manager.Handler[ih]->actOn[it]){
             if(!fieldBeenSet) ((field_solver*)(Solver->Field))->cellSetField(*activeThread.CI, activeThread.CI->i);
             fieldBeenSet = true;
@@ -311,7 +311,7 @@ struct ensemble
         chronometerCells.stop();
 
         layout.makePlan();
-        for(int iTh = 0; iTh < thread.size(); iTh++){
+        for(size_t iTh = 0; iTh < thread.size(); iTh++){
             thread[iTh].reset();
             thread[iTh].CI->D[12] = timeStep;
         }
@@ -340,7 +340,7 @@ struct ensemble
                     bool fieldBeenSet = false;
                     apply_actOnCellHandlers<pic_solver, field_solver>(Solver, activeThread, fieldBeenSet, ig, true);
                     if(cell[ig] != nullptr)
-                    for(int it = 0; it < type.size(); it++)
+                    for(size_t it = 0; it < type.size(); it++)
                     if(cell[ig][it] != nullptr){
                         if(cell[ig][it]->P.size() - cell[ig][it]->endShift > 0){
                             activeThread.CI->I[8] = it;
@@ -353,7 +353,7 @@ struct ensemble
                             apply_particleHandlers<pic_solver, field_solver>(it, Solver, activeThread, fieldBeenSet, ig, true);
                             activeThread.toRemove.clear();
                             activeThread.toRemoveLocal.clear();
-                            for(int ip = 0; ip < cell[ig][it]->P.size() - cell[ig][it]->endShift; ip++){ 
+                            for(size_t ip = 0; ip < cell[ig][it]->P.size() - cell[ig][it]->endShift; ip++){ 
                                 if(likely(cell[ig][it]->P[ip].w != 0)){
                                     Solver->processParticle(cell[ig][it]->P[ip], type[it].charge, type[it].mass, timeStep);
                                     bool move, postOmpMove;
@@ -383,7 +383,7 @@ struct ensemble
             RndGen.assignToCurrentThread(0);
         }
         int overCellRelocated = 0;
-        for(int iTh = 0; iTh < thread.size(); iTh++)
+        for(size_t iTh = 0; iTh < thread.size(); iTh++)
         {
             for(int il = thread[iTh].postOmpMigrationList.size() - 1; il >= 0; il--)
             {
@@ -403,7 +403,7 @@ struct ensemble
         if(overCellRelocated > 0) pipic_log.message("pi-PIC warning: " + to_string(overCellRelocated) + " overcell migrations; consider reducing time step");
 
         Manager.latest_av_ppc = double(totalNumberOfParticles)/double(box.ng);
-        unsigned int migrationCounter = 0; for(int iTh = 0; iTh < thread.size(); iTh++)migrationCounter += thread[iTh].numMigrated;
+        unsigned int migrationCounter = 0; for(size_t iTh = 0; iTh < thread.size(); iTh++)migrationCounter += thread[iTh].numMigrated;
         Manager.latest_av_cmr = migrationCounter/double(totalNumberOfParticles);
         chronometerCells.start();
         Solver->postLoop();
@@ -420,7 +420,7 @@ struct ensemble
         chronometerCells.stop();
 
         layout.makePlan();
-        for(int iTh = 0; iTh < thread.size(); iTh++){
+        for(size_t iTh = 0; iTh < thread.size(); iTh++){
             thread[iTh].reset();
             thread[iTh].CI->D[12] = timeStep;
         }
@@ -492,7 +492,7 @@ struct ensemble
                     activeThread.CI->I[11] = 0;
 
                     if(cell[ig] != nullptr)
-                    for(int it = 0; it < type.size(); it++)
+                    for(size_t it = 0; it < type.size(); it++)
                     if(cell[ig][it] != nullptr){
                         if(cell[ig][it]->P.size() - cell[ig][it]->endShift > 0){
                             activeThread.CI->I[8] = it;
@@ -536,7 +536,7 @@ struct ensemble
             RndGen.assignToCurrentThread(0);
         }
         int overCellRelocated = 0;
-        for(int iTh = 0; iTh < thread.size(); iTh++)
+        for(size_t iTh = 0; iTh < thread.size(); iTh++)
         {
             for(int il = thread[iTh].postOmpMigrationList.size() - 1; il >= 0; il--)
             {
@@ -557,7 +557,7 @@ struct ensemble
         if(overCellRelocated > 0) pipic_log.message("pi-PIC warning: " + to_string(overCellRelocated) + " overcell migrations; consider reducing time step.");
 
         Manager.latest_av_ppc = double(totalNumberOfParticles)/double(box.ng);
-        unsigned int migrationCounter = 0; for(int iTh = 0; iTh < thread.size(); iTh++)migrationCounter += thread[iTh].numMigrated;
+        unsigned int migrationCounter = 0; for(size_t iTh = 0; iTh < thread.size(); iTh++)migrationCounter += thread[iTh].numMigrated;
         Manager.latest_av_cmr = migrationCounter/double(totalNumberOfParticles);
         
         chronometerCells.start();
@@ -680,7 +680,7 @@ struct ensemble
     int getTypeIndex(string typeName)
     {
         int typeIndex = -1; // error code value
-        for(int it = 0; it < type.size(); it++) if(typeName == type[it].name) typeIndex = it;
+        for(size_t it = 0; it < type.size(); it++) if(typeName == type[it].name) typeIndex = it;
         if(typeIndex == -1){
             pipic_log.message("pipic error: unknown particle type name '" + typeName + "'.", true);
             exit(-1);

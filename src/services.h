@@ -50,7 +50,7 @@ struct pipicLog // basic structure to handle log messages
     string fileName;
     ofstream file;
     vector<string> messages;
-    pipicLog(string fileName): fileName(fileName), logToFile(true), logToScreen(false){
+    pipicLog(string fileName): logToScreen(false), logToFile(true), fileName(fileName){
         file.open (fileName, ios::trunc);
         file << "pi-PIC log file" << endl;
         file.close();
@@ -63,7 +63,7 @@ struct pipicLog // basic structure to handle log messages
     void saveBuffer(){
         if(logToFile){
             file.open (fileName, ios::app);
-            for(int i = 0; i < messages.size(); i++) file << messages[i] << endl;
+            for(size_t i = 0; i < messages.size(); i++) file << messages[i] << endl;
             file.close();
             messages.clear();
         }
@@ -176,23 +176,23 @@ struct cellHandler
     }
     void preLoop(vector<string> typeName){        
         actOn.resize(typeName.size());
-        for(int i = 0; i < actOn.size(); i++) actOn[i] = false;
+        for(size_t i = 0; i < actOn.size(); i++) actOn[i] = false;
         actOnCell = false;
         char* pch;
         char* source = new char[subject.size() + 1];
-        for(int i = 0; i < subject.size(); i++) source[i] = subject[i];
+        for(size_t i = 0; i < subject.size(); i++) source[i] = subject[i];
         pch = strtok(source, " ,.-");
         while (pch != NULL){
             bool detected = false;
             if(string(pch) == "all_types") {
-                for(int i = 0; i < actOn.size(); i++) actOn[i] = true;
+                for(size_t i = 0; i < actOn.size(); i++) actOn[i] = true;
                 detected = true;
             }
             if(string(pch) == "cells") {
                 actOnCell = true;
                 detected = true;
             }
-            for(int i = 0; i < actOn.size(); i++) if(string(pch) == typeName[i].c_str()) {
+            for(size_t i = 0; i < actOn.size(); i++) if(string(pch) == typeName[i].c_str()) {
                 actOn[i] = true;
                 detected = true;
             }
@@ -240,15 +240,15 @@ struct handlerManager
     double latest_av_ppc, latest_av_cmr; // average number of particles per cell and average inter-cell migration rate
     double best_cellUpdateTime_ns, best_particleUpdateTime_ns;
     handlerManager(double numberOfCells):
-    numberOfCells(numberOfCells),
+    reportPerformance(true),
     totalEnsembleTime(0), totalParticleUpdates(0),
     totalFieldTime(0), totalCellUpdates(0),
+    numberOfCells(numberOfCells),
     best_cellUpdateTime_ns(numeric_limits<double>::max()),
-    best_particleUpdateTime_ns(numeric_limits<double>::max()),
-    reportPerformance(true)
+    best_particleUpdateTime_ns(numeric_limits<double>::max())
     {}
     void iterationEnd(unsigned int ng){
-        for(int ih = 0; ih < Handler.size(); ih++) Handler[ih]->postLoop(ng);
+        for(size_t ih = 0; ih < Handler.size(); ih++) Handler[ih]->postLoop(ng);
         
         best_cellUpdateTime_ns = std::min(best_cellUpdateTime_ns, (1e+9)*latestFieldTime/numberOfCells);
         if(latestParticleUpdates > 0) best_particleUpdateTime_ns = std::min(best_particleUpdateTime_ns, (1e+9)*latestEnsembleTime/latestParticleUpdates);
@@ -276,7 +276,7 @@ struct handlerManager
             file << setw(16) << "Ensemble" << setw(16) << (1e+9)*totalEnsembleTime/totalParticleUpdates << setw(16) << best_particleUpdateTime_ns << setw(16) << totalEnsembleTime << endl;
         file << setw(16) << "Field" << setw(16) << (1e+9)*totalFieldTime/totalCellUpdates << setw(16) << best_cellUpdateTime_ns << setw(16) << totalFieldTime << endl;
         file << endl;
-        for(int ih = 0; ih < Handler.size(); ih++){
+        for(size_t ih = 0; ih < Handler.size(); ih++){
             if(Handler[ih]->total_numberProcessed > 0) {
                 file << setw(16) << Handler[ih]->name;
                 file << setw(16) << (1e+9)*Handler[ih]->total_partilesTime_s/Handler[ih]->total_numberProcessed;
@@ -292,15 +292,15 @@ struct handlerManager
     }
     ~handlerManager(){
         performanceSummary();
-        for(int i = 0; i < Handler.size(); i++) delete Handler[i];
+        for(size_t i = 0; i < Handler.size(); i++) delete Handler[i];
     }
     void addCellHandler(string name, string subject, int64_t handler, double* dataDouble, int* dataInt){
         Handler.push_back(new cellHandler(name, subject, handler, dataDouble, dataInt));
     }
     void preLoop(vector<particleType> types){
         vector<string> particleNames;
-        for(int it = 0; it < types.size(); it++) particleNames.push_back(types[it].name);
-        for(int ih = 0; ih < Handler.size(); ih++) Handler[ih]->preLoop(particleNames);
+        for(size_t it = 0; it < types.size(); it++) particleNames.push_back(types[it].name);
+        for(size_t ih = 0; ih < Handler.size(); ih++) Handler[ih]->preLoop(particleNames);
     }
 };
 

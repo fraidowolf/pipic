@@ -31,8 +31,8 @@ struct ec2_solver: public pic_solver //energy-conserving solver
     vector<fieldSubMap64> subField;
 
     ec2_solver(simulationBox box): 
-    subField(omp_get_max_threads()), overStepMove(omp_get_max_threads(), 0),
-    data(omp_get_max_threads())
+    overStepMove(omp_get_max_threads(), 0), data(omp_get_max_threads()),
+    subField(omp_get_max_threads())
     {
         field = new fourierSolver(box, FFTW_PATIENT);
         Field = field;

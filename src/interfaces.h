@@ -101,11 +101,12 @@ struct simulationBox
     int3 n; // number of cells alongs each dimension; must be powers of two; for 2D set n.z = 1, for 1D set n.z = n.y = 1 
     unsigned int ng; // total number of cells
     int dim; // problem dimensionality
-    simulationBox(int3 n, double3 min, double3 max): n(n), min(min), max(max), ng(((unsigned int)n.x)*n.y*n.z), 
+    simulationBox(int3 n, double3 min, double3 max): min(min), max(max),
     size(max.x - min.x, max.y - min.y, max.z - min.z),
-    invStep(n.x/(max.x - min.x), n.y/(max.y - min.y), n.z/(max.z - min.z)),
     invSize(1/(max.x - min.x), 1/(max.y - min.y), 1/(max.z - min.z)),
-    step((max.x - min.x)/n.x, (max.y - min.y)/n.y, (max.z - min.z)/n.z)
+    step((max.x - min.x)/n.x, (max.y - min.y)/n.y, (max.z - min.z)/n.z),
+    invStep(n.x/(max.x - min.x), n.y/(max.y - min.y), n.z/(max.z - min.z)),
+    n(n), ng(((unsigned int)n.x)*n.y*n.z)
     {
         dim = 3;
         if(n.z == 1) dim = 2; 
