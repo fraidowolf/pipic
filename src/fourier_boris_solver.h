@@ -102,9 +102,9 @@ struct fourier_boris_solver: public pic_solver
             unsigned int cig[8];
             double3 r = P.r;
             r += (-0.5)*dtv; // half-step backward shift
-            if(r.x < box.min.x) r.x += box.max.x - box.min.x; if(r.x > box.max.x) r.x -= box.max.x - box.min.x;
-            if(r.y < box.min.y) r.y += box.max.y - box.min.y; if(r.y > box.max.y) r.y -= box.max.y - box.min.y;
-            if(r.z < box.min.z) r.z += box.max.z - box.min.z; if(r.z > box.max.z) r.z -= box.max.z - box.min.z;
+            if(r.x < box.min.x) {r.x += box.max.x - box.min.x;} if(r.x > box.max.x) r.x -= box.max.x - box.min.x;
+            if(r.y < box.min.y) {r.y += box.max.y - box.min.y;} if(r.y > box.max.y) r.y -= box.max.y - box.min.y;
+            if(r.z < box.min.z) {r.z += box.max.z - box.min.z;} if(r.z > box.max.z) r.z -= box.max.z - box.min.z;
             
             int cix = floor((r.x - box.min.x)*box.invStep.x); c[1] = (r.x - box.min.x)*box.invStep.x - cix; c[0] = 1 - c[1];
             int cix_ = cix + 1; if(cix_ == box.n.x) cix_ = 0;
@@ -139,9 +139,9 @@ struct fourier_boris_solver: public pic_solver
         { //CIC weighting, deposition of current
             unsigned int cig[8];
             double3 r = P.r;
-            if(r.x < box.min.x) r.x += box.max.x - box.min.x; if(r.x > box.max.x) r.x -= box.max.x - box.min.x;
-            if(r.y < box.min.y) r.y += box.max.y - box.min.y; if(r.y > box.max.y) r.y -= box.max.y - box.min.y;
-            if(r.z < box.min.z) r.z += box.max.z - box.min.z; if(r.z > box.max.z) r.z -= box.max.z - box.min.z;
+            if(r.x < box.min.x) {r.x += box.max.x - box.min.x;} if(r.x > box.max.x) r.x -= box.max.x - box.min.x;
+            if(r.y < box.min.y) {r.y += box.max.y - box.min.y;} if(r.y > box.max.y) r.y -= box.max.y - box.min.y;
+            if(r.z < box.min.z) {r.z += box.max.z - box.min.z;} if(r.z > box.max.z) r.z -= box.max.z - box.min.z;
             
             int cix = floor((r.x - box.min.x)*box.invStep.x); c[1] = (r.x - box.min.x)*box.invStep.x - cix; c[0] = 1 - c[1];
             int cix_ = cix + 1; if(cix_ == box.n.x) cix_ = 0;
