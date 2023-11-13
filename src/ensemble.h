@@ -152,13 +152,15 @@ struct ensemble
     int placeParticles(string typeName, int totalNumber, double typeCharge, double typeMass, double temperature, int64_t density, int64_t dataDouble = 0, int64_t dataInt = 0) // returns typeIndex
     {
         int typeIndex = -1; // index of particle type; initial code "-1" is to be changed if typeName is found in typeName, otherwise new type is added below
-        for(size_t it = 0; it < type.size(); it++) 
-        if(typeName == type[it].name)
-        if((typeCharge == type[it].charge)&&(typeMass == type[it].mass))
-            typeIndex = it; // found among previously defined types
-        else {
-            pipic_log.message("ensemble.addParticles() error: same type name must have same charge and mass.", true); 
-            return -1;
+        for(size_t it = 0; it < type.size(); it++) {
+            if(typeName == type[it].name) {
+                if((typeCharge == type[it].charge)&&(typeMass == type[it].mass)) {
+                    typeIndex = it; // found among previously defined types
+                } else {
+                    pipic_log.message("ensemble.addParticles() error: same type name must have same charge and mass.", true); 
+                    return -1;
+                }
+            }
         }
         bool newType = (typeIndex == -1); // newType = true if typeName is not found among previously defined types
         if(newType){
@@ -256,10 +258,11 @@ struct ensemble
             activeThread.NP[j].id = generateID();
             if(checkLocation(activeThread.NP[j].r, activeThread.CI->cellMin(), activeThread.CI->cellMax())){
                 checkPushBack(ig, it, activeThread.NP[j]);
-                if(directOrder)
-                    if(it >= activeThread.CI->PType) cell[ig][it]->endShift++;
-                else
-                    if(it <= activeThread.CI->PType) cell[ig][it]->endShift++;
+                if(directOrder) {
+                    if(it >= activeThread.CI->PType) {cell[ig][it]->endShift++;}
+                } else {
+                    if(it <= activeThread.CI->PType) {cell[ig][it]->endShift++;}
+                }
             } else
                 pipic_log.message("pi-PIC error: ignoring an attempt of module<" + moduleName + "> to add a particle outside current cell.", true);
         }
