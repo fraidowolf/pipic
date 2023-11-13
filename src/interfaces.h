@@ -142,6 +142,7 @@ struct field_solver
     //functions neded for cellInterface
     inline void setGridType(cellInterface &CI, int gridType){CI.I[12] = gridType;};
     inline double*& getCI_F_Data(cellInterface &CI){return CI.F_data;};
+    virtual ~field_solver() = default;
 };
 
 struct pic_solver
