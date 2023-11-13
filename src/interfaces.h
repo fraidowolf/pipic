@@ -46,6 +46,15 @@ struct cellHandler;
 
 struct cellInterface // main structure for developing extensions; provides access to particles and/or field values for all cells
 {
+    private:
+    // data (to be accessed via interfaces):
+    int *I; // integer parameters
+    double *D; // double parameters
+    double *F_data; // em-field at the coners of the cell
+    double *P_data; // data for storing particles at the cell of the type being processed
+    double *NP_data; // data for the buffer array of particles to be added    
+
+    public:
     //access to basic parameters:
     const int3 &i, &n; // three-index of the cell and three-size of the grid
     const int &dim, &aNum; // dimensionality and the number of additional attributes of particles
@@ -82,14 +91,8 @@ struct cellInterface // main structure for developing extensions; provides acces
     step(*(double3*)(D + 6)), invStep(*(double3*)(D + 9)),
     timeStep(D[12]), PCharge(D[13]), PMass(D[14])
     {}
-    private:
-    // data (to be accessed via interfaces):
-    int *I; // integer parameters
-    double *D; // double parameters
-    double *F_data; // em-field at the coners of the cell
-    double *P_data; // data for storing particles at the cell of the type being processed
-    double *NP_data; // data for the buffer array of particles to be added    
     
+    private:
     friend struct ensemble;
     friend struct field_solver;
     friend struct cellHandler;
