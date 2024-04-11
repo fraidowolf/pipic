@@ -58,8 +58,8 @@ dx, dy, dz = (xmax - xmin)/nx, (ymax - ymin)/ny, (zmax - zmin)/nz
 timestep = dt*Tr/1e1
 thickness = 10 # thickness (in dx) of the area where the density and field is restored/removed 
 
-s = 1000 #3000*10 # number of iterations 
-checkpoint = 10   
+s = 10000 #3000*10 # number of iterations 
+checkpoint = 100   
 
 
 #---------------------setting solver and simulation region----------------------
