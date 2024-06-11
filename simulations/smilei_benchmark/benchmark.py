@@ -25,62 +25,95 @@ def create_hdf5(fp, shape, dsets=['Ex','Ez','Ey','Bx','Bz','By','rho'],mode="w")
 
 
 # Smilei parameters
-dz_s = 0.8            # longitudinal resolution
-dy_s = 4.
+dz_s = 0.6/8            # longitudinal resolution
+dy_s = 4./2
 dx_s = dy_s              # transverse resolution
-dt = 0.8*dz_s          # timestep
-nz,ny,nx = 32*10,32,32 #32,32
+dt = 0.2*dz_s          # timestep
+nz,ny,nx = 2*32*16,2*32,2*32 #32,32
 Lx = nx*dx_s 
 Ly = ny*dy_s
 Lz = nz*dz_s
 a0 = 4.0
-n0 = 10e18 # [1/cm^3]
-n1 = n0/3
+n0_s = 0.003 #10e18 # [1/cm^3]
+n1_s = n0_s/3
+n0_r = 1e18/n0_s # 10e18 is the max electron (num) density
+omega_s = 2.5
 
 c = consts.light_velocity # [cm/s]
 m = consts.electron_mass # [g]
 e = consts.electron_charge # [statC]
-omega_r = np.sqrt(np.pi*4*e**2*n0/m)
+omega_r = np.sqrt(np.pi*4*e**2*n0_r/m)
+fwhm_duration_laser_pulse_s = 13
+waist_s = 25
+distance_laser_peak_window_border_s = 1.7*fwhm_duration_laser_pulse_s
 
 # conversion factors
 Lr = c/omega_r
 Tr = 1/omega_r
-
+Nr = m*omega_r**2/(np.pi*4*e**2)
 
 #===========================SIMULATION INITIALIZATION===========================
 xmin, xmax = -Lx*Lr/2, Lx*Lr/2
 ymin, ymax = -Ly*Lr/2, Ly*Lr/2
 zmin, zmax = -Lz*Lr/2, Lz*Lr/2
-nz = 32*16
-ny = 32
-nx = ny
 dx, dy, dz = (xmax - xmin)/nx, (ymax - ymin)/ny, (zmax - zmin)/nz
-timestep = dt*Tr/1e1
+timestep = dt*Tr
 thickness = 10 # thickness (in dx) of the area where the density and field is restored/removed 
 
-s = 10000 #3000*10 # number of iterations 
-checkpoint = 100   
+s = 30000 #3000*10 # number of iterations 
+checkpoint = 50   
 
 
 #---------------------setting solver and simulation region----------------------
 sim=pipic.init(solver='ec',nx=nx,ny=ny,nz=nz,xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,zmin=zmin,zmax=zmax)
 
+#--------------------------- setting plasma profile --------------------------
+
+n0 = Nr*n0_s
+n1 = Nr*n1_s
+#debye_length = .1*wavelength/64.0 #>>3/(4*pi*density), <dx ???
+temperature = 0 #4 * np.pi * density * (consts.electron_charge ** 2) * debye_length ** 2
+particles_per_cell = 8 # 8 in smilei
+
+begin_upramp = zmax
+end_upramp = Lz*Lr*4 + begin_upramp
+begin_downramp = end_upramp
+end_downramp = begin_downramp
+endplateau = end_downramp + 4*Lz*Lr
+finish = endplateau
+
+@cfunc(types.add_particles_callback)
+def density_profile(r, data_double, data_int):
+    # r is the position in the 'lab frame'  
+    R = r[2] #+ thickness*dz
+
+    if R >= begin_upramp and R < end_upramp:
+        return n0*((R-begin_upramp)/(end_upramp-begin_upramp))
+    elif R >= end_upramp and R < begin_downramp: 
+        return n0
+    elif R >= begin_downramp and R > end_downramp and (end_downramp != begin_downramp):
+        return n0-(n0-n1)*(R-begin_downramp)/(end_downramp-begin_downramp)
+    elif R >= end_downramp and R < endplateau:
+        return n1
+    else:
+        return 0
 #---------------------------setting field of the pulse--------------------------
 
 # conversions laser parameters
-omega_l = 2.5 * omega_r # [1/s]
-fieldAmplitude = a0*m*c*omega_l/e # [statV/cm]
-omega0 = 2*np.pi*consts.light_velocity/2.e-4 # [1/s] # note not the laser frequency!
-fwhm_duration_laser_pulse = Tr*20e-15 * omega0 *2**0.5 # [s]
-pulseWidth_x = (fwhm_duration_laser_pulse/2.355)*consts.light_velocity # [cm]
+omega_l = omega_s * omega_r # [1/s]
+fieldAmplitude = -a0*m*c*omega_l/e # [statV/cm]
 wavelength = 2*np.pi*consts.light_velocity/omega_l # [cm]
-waist = fwhm_duration_laser_pulse*consts.light_velocity 
-focusPosition = Lz*Lr
-init_laser_pos = Lz*Lr/2-1.7*fwhm_duration_laser_pulse*Lr/Tr
 
-omega_p = np.sqrt(4*np.pi*n0*consts.electron_charge**2/consts.electron_mass)
+fwhm_duration_laser_pulse = Tr*fwhm_duration_laser_pulse_s
+pulseWidth_x = (fwhm_duration_laser_pulse/2.355)*consts.light_velocity # [cm]
+
+waist = waist_s*Lr
+init_laser_pos = zmax-distance_laser_peak_window_border_s*Lr
+focusPosition = begin_downramp - init_laser_pos
+
+omega_p = np.sqrt(4*np.pi*Nr*n0_s*consts.electron_charge**2/consts.electron_mass)
 wp = 2*np.pi*consts.light_velocity/omega_p
-print(focusPosition,init_laser_pos)
+print(wavelength,dz,2*np.pi/omega_l,timestep)
 
 @cfunc(types.field_loop_callback)
 def initiate_field_callback(ind, r, E, B, data_double, data_int):
@@ -92,10 +125,12 @@ def initiate_field_callback(ind, r, E, B, data_double, data_int):
         k = 2*np.pi/wavelength
         # Rayleigh length
         Zr = np.pi*waist**2/wavelength 
+        
         # curvature
-        R = focusPosition*(1+(Zr/focusPosition)**2)
+        R = focusPosition*(1+(Zr/focusPosition)**2)        
         
         spotsize_init = waist*np.sqrt(1+(focusPosition/Zr)**2)
+
         phase = np.arctan(focusPosition/Zr)    
         amp = fieldAmplitude*(waist/spotsize_init)*np.exp(-rho2/spotsize_init**2)
         curvature = np.exp(1j*k*rho2/(2*R))
@@ -106,46 +141,7 @@ def initiate_field_callback(ind, r, E, B, data_double, data_int):
         E[0] = gp       
         B[1] = gp        
 
-#--------------------------- setting plasma profile --------------------------
 
-density = n0
-debye_length = .1*wavelength/64.0 #>>3/(4*pi*density), <dx ???
-temperature = 0 #4 * np.pi * density * (consts.electron_charge ** 2) * debye_length ** 2
-particles_per_cell = 1 # 8 in smilei
-
-Lupramp  = 10*dz_s*Lr
-Lplateau = Lz*1.5*Lr
-Ldownramp = 10*dz_s*Lr
-
-begin_upramp = (Lz/2)*Lr
-xplateau = begin_upramp + Lupramp # Start of the plateau
-begin_downramp = xplateau + Lplateau # Beginning of the output ramp.
-
-xplateau2 = begin_downramp + Ldownramp/100 # Beginning of the output ramp.
-begin_downramp2 = xplateau2+ Lplateau*3 # Beginning of the output ramp.
-finish = begin_downramp2 + Ldownramp # End of plasma
-
-
-@cfunc(types.add_particles_callback)
-def density_profile(r, data_double, data_int):
-    # r is the position in the 'lab frame'  
-    R = r[2]
-    
-    if R < begin_upramp:
-        return 0
-    elif R < xplateau:
-        return n0*((R-begin_upramp)/Lupramp)
-    elif R < begin_downramp: 
-        return n0
-    elif R < xplateau2:
-        return n0*(1-((R-begin_downramp)/(Ldownramp/100)))
-    elif R < begin_downramp2:
-        return n1
-    elif R < finish:
-        return n1*((R-begin_downramp2)/Ldownramp)
-    else:
-        return 0
- 
 @cfunc(types.field_loop_callback)
 def remove_field(ind, r, E, B, data_double, data_int):
 
@@ -165,11 +161,11 @@ def remove_field(ind, r, E, B, data_double, data_int):
 
 #=================================OUTPUT========================================
 #-------------------------preparing output of fields (x)-----------------------------
-Ex = np.zeros((nx,ny,nz), dtype=np.double) 
-Ey = np.zeros((nx,ny,nz), dtype=np.double) 
-Ez = np.zeros((nx,ny,nz), dtype=np.double) 
+Ex = np.zeros((ny,nz), dtype=np.double) 
+Ey = np.zeros((ny,nz), dtype=np.double) 
+Ez = np.zeros((ny,nz), dtype=np.double) 
 
-rho = np.zeros((nx,ny,nz), dtype=np.double) 
+rho = np.zeros((ny,nz), dtype=np.double) 
 # not done
 pmin = 0
 pmax = 1e-15
@@ -180,16 +176,16 @@ ps = np.zeros((nps,nz), dtype=np.double)
     
 @cfunc(types.particle_loop_callback)
 def get_density(r, p, w, id, data_double, data_int):   
-    ix = int(rho.shape[0]*(r[0] - xmin)/(xmax - xmin))
-    iy = int(rho.shape[1]*(r[1] - ymin)/(ymax - ymin))
-    iz = int(rho.shape[2]*(r[2] - zmin)/(zmax - zmin))
+    ix = int(nx*(r[0] - xmin)/(xmax - xmin))
+    iy = int(ny*(r[1] - ymin)/(ymax - ymin))
+    iz = int(nz*(r[2] - zmin)/(zmax - zmin))
 
     data = carray(data_double, rho.shape, dtype=np.double)
     
-    if (iy < rho.shape[1] and 
-        ix < rho.shape[0] and
-        iz < rho.shape[2]):
-        data[ix, iy, iz] += w[0]/(dx*dy*dz)
+    if (iy < rho.shape[0] and 
+        ix == nx//2 and
+        iz < rho.shape[1]):
+        data[iy, iz] += w[0]/(dx*dy*dz)
 
 @cfunc(types.particle_loop_callback)
 def get_phase_space(r, p, w, id, data_double, data_int):   
@@ -203,18 +199,21 @@ def get_phase_space(r, p, w, id, data_double, data_int):
 
 @cfunc(types.field_loop_callback)
 def get_field_Ey(ind, r, E, B, data_double, data_int):
-    _E = carray(data_double, Ey.shape, dtype=np.double)
-    _E[ind[0], ind[1], ind[2]] = E[1]
+    if ind[0]==nx//2:
+        _E = carray(data_double, Ey.shape, dtype=np.double)
+        _E[ind[1], ind[2]] = E[1]
 
 @cfunc(types.field_loop_callback)
-def get_field_Ex(ind, r, E, B, data_double, data_int):       
-    _E = carray(data_double, Ex.shape, dtype=np.double)
-    _E[ind[0], ind[1], ind[2]] = E[0]
+def get_field_Ex(ind, r, E, B, data_double, data_int):   
+    if ind[0]==nx//2:    
+        _E = carray(data_double, Ex.shape, dtype=np.double)
+        _E[ind[1], ind[2]] = E[0]
 
 @cfunc(types.field_loop_callback)
-def get_field_Ez(ind, r, E, B, data_double, data_int):      
-    _E = carray(data_double, Ez.shape, dtype=np.double)
-    _E[ind[0], ind[1], ind[2]] = E[2]
+def get_field_Ez(ind, r, E, B, data_double, data_int):
+    if ind[0]==nx//2:      
+        _E = carray(data_double, Ez.shape, dtype=np.double)
+        _E[ind[1], ind[2]] = E[2]
 
 
 def load_fields():
@@ -249,7 +248,8 @@ sim.add_particles(name='electron', number=int(ny*nz*nx),
                 temperature=temperature, density=density_profile.address,
                 data_int=pipic.addressof(data_int))
 
-density_handler_adress = moving_window.handler(thickness=thickness,
+density_handler_adress = moving_window.handler(sim.ensemble_data(),
+                                               thickness=thickness,
                                                particles_per_cell=particles_per_cell,
                                                temperature=temperature,
                                                density = density_profile.address,)
@@ -269,7 +269,7 @@ fields = [Ex,Ey,Ez,rho,ps]
 ncp = s//checkpoint
 
 hdf5_fp = 'lwfa.h5'
-create_hdf5(hdf5_fp, shape=(ncp,nx,ny,nz),dsets=dsets[:-1])
+create_hdf5(hdf5_fp, shape=(ncp,ny,nz),dsets=dsets[:-1])
 create_hdf5(hdf5_fp, shape=(ncp,nps,nz),dsets=['ps'],mode="r+")
 
 create_hdf5(hdf5_fp,shape=(nx,),dsets=['x_axis',],mode="r+")
