@@ -8,10 +8,8 @@ from numpy import exp, sqrt, arctan, vectorize, real
 from math import log
 import numpy as np
 import os,sys
-import happi
 import matplotlib.pyplot as plt
 import h5py
-import pickle
 #from vacuum_propagation import *
 
 fp_initial = './lwfa.h5'
