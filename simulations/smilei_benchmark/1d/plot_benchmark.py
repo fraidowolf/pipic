@@ -1,9 +1,8 @@
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-from pipic import consts,types
 import happi
-import matplotlib
+import matplotlib as mpl
 
 # add folder to path
 import sys
@@ -48,7 +47,7 @@ dt = dx/4         # timestep
 
 figw = style.figsize['inch']['double_column_width']*0.6
 fig, ax = plt.subplots(2,2,figsize=(figw,figw*0.8))
-cmap = matplotlib.cm.get_cmap('coolwarm')
+cmap = mpl.cm.get_cmap('coolwarm')
 colors_pp = [cmap(i) for i in np.linspace(0.,1,4)] #['tab:blue','tab:orange','tab:green','tab:red']
 
 fields = ['Ex','rho']
@@ -63,7 +62,7 @@ x_axis = a[0]
 x_axis *= 1e4
 x_axis += 1e4*Lx*Lr/2
 
-ax[0,0].plot(x_axis,Ex[i]*1e-6,color='k',label=r'$\pi$PIC - EC pusher')
+ax[0,0].plot(x_axis,Ex[i]*1e-6,color='k',label=r'$\pi$PIC - Energy conserving solver')
 ax[1,0].plot(x_axis,rho[i]*1e-18,color='k')
 
 ix1 = np.argwhere(x_sr[0]<x_axis)[0][0]
@@ -73,19 +72,20 @@ ix2 = np.argwhere(x_sr[1]<x_axis)[0][0]
 ax[0,1].plot(x_axis[ix1:ix2],Ex[i][ix1:ix2]*1e-6,color='k')
 ax[1,1].plot(x_axis[ix1:ix2],rho[i][ix1:ix2]*1e-18,color='k')
 
-'''
-f,a = load_data('./boris/lwfa_neg_delayed.h5',fields=fields,axes=axes,ind=i+1)
+
+#f,a = load_data('./boris/lwfa_neg_delayed.h5',fields=fields,axes=axes,ind=i+1)
+f,a = load_data('./boris_with_div_cleaning/lwfa_neg_delayed_div_clean.h5',fields=fields,axes=axes,ind=i+1)
 Ex,rho = f
 x_axis = a[0]
 x_axis *= 1e4
 x_axis += 1e4*Lx*Lr/2
 
-ax[0,0].plot(x_axis,Ex[i]*1e-6,'--',color='tab:orange',label=r'$\pi$PIC - Boris pusher')
-ax[1,0].plot(x_axis,rho[i]*1e-18,'--',color='tab:orange')
+ax[0,0].plot(x_axis,Ex[i]*1e-6,linestyle=(0,(2,3)),color='tab:orange',label=r'$\pi$PIC - Fourier-Boris solver')
+ax[1,0].plot(x_axis,rho[i]*1e-18,linestyle=(0,(2,3)),color='tab:orange')
 
-ax[0,1].plot(x_axis[ix1:ix2],Ex[i][ix1:ix2]*1e-6,'--',color='tab:orange')
-ax[1,1].plot(x_axis[ix1:ix2],rho[i][ix1:ix2]*1e-18,'--',color='tab:orange')
-'''
+ax[0,1].plot(x_axis[ix1:ix2],Ex[i][ix1:ix2]*1e-6,linestyle=(0,(2,3)),color='tab:orange')
+ax[1,1].plot(x_axis[ix1:ix2],rho[i][ix1:ix2]*1e-18,linestyle=(0,(2,3)),color='tab:orange')
+
 
 S = happi.Open('../../../../smilei/benchmark/1d/4res_M4_solver/')
 
@@ -114,7 +114,7 @@ Ez = S.Field.Field0("Ez",timestep_indices=s).getData()
 x = np.arange(0,Lx*Lr+dx*Lr,dx*Lr) 
 x -= 0 # - c*8*dt*Tr # compensation for diffrent starting points?
 x *= 1e4
-ax[0,0].plot(x,Er*Ex[0]*1e-6,'-.',color='tab:green',label='Smilei - Boris pusher')
+ax[0,0].plot(x,Er*Ex[0]*1e-6,'-.',color='tab:green',label='Smilei - M4 Solver')
 ax[1,0].plot(x,-Nr*Rho[0]*1e-18,'-.',color='tab:green')
 
 ix1 = np.argwhere(x_sr[0]<x)[0][0]
@@ -183,12 +183,15 @@ ax[0,1].text(0.83,0.87,t[2],transform=ax[0,1].transAxes)
 ax[1,1].text(0.05,0.87,t[3],transform=ax[1,1].transAxes)
 
 
-fig.legend(frameon=False,ncol=3, bbox_to_anchor=(0.95, 1.03))
 
-plt.subplots_adjust(wspace=0.05, hspace=0.05)
+fig.legend(frameon=False,ncol=2, bbox_to_anchor=(1.0, 1.15))
 
-plt.tight_layout()
-plt.savefig('im.png',dpi=600)
+mpl.rcParams["figure.constrained_layout.use"] = False
+
+plt.subplots_adjust(wspace=0.05, hspace=0.05,top=10)
+
+#plt.tight_layout()
+plt.savefig('im.png',dpi=600,bbox_inches='tight')
 
 
 
