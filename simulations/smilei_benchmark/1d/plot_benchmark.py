@@ -64,7 +64,7 @@ x_axis += 1e4*Lx*Lr/2
 
 ax[0,0].plot(x_axis,Ex[i]*1e-6,color='k',label=r'$\pi$PIC - Energy conserving solver')
 ax[1,0].plot(x_axis,rho[i]*1e-18,color='k')
-
+ 
 ix1 = np.argwhere(x_sr[0]<x_axis)[0][0]
 ix2 = np.argwhere(x_sr[1]<x_axis)[0][0]
 
@@ -87,7 +87,7 @@ ax[0,1].plot(x_axis[ix1:ix2],Ex[i][ix1:ix2]*1e-6,linestyle=(0,(2,3)),color='tab:
 ax[1,1].plot(x_axis[ix1:ix2],rho[i][ix1:ix2]*1e-18,linestyle=(0,(2,3)),color='tab:orange')
 
 
-S = happi.Open('../../../../smilei/benchmark/1d/4res_M4_solver/')
+S = happi.Open('./smilei/4res_M4_solver/')
 
 fwhm_duration_laser_pulse = 15*2*np.pi
 pulse_duration = fwhm_duration_laser_pulse*2*3/2.335 #+- 3sigma 
