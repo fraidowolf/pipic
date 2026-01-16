@@ -24,24 +24,26 @@ Contact: arkady.gonoskov@gu.se.
 #include "fourier_boris_solver.h"
 #include "ec_solver.h"
 #include "ec2_solver.h"
+#include "ES1D_pic_solver.h"
 
 struct pipic
 {
     int nx, ny, nz;
-    double XMin, XMax, YMin, YMax, ZMin, ZMax; 
+    double XMin, XMax, YMin, YMax, ZMin, ZMax;
     simulationBox box;
     field_solver *Field;
     ensemble *Ensemble;
     pic_solver *Solver;
     bool reportPerformance;
-    pipic(string solverName, int nx, double XMin, double XMax, int ny = 1, double YMin = -0.5, double YMax = 0.5, int nz = 1, double ZMin = -0.5, double ZMax = 0.5): 
-    nx(nx), ny(ny), nz(nz), XMin(XMin), XMax(XMax), YMin(YMin), YMax(YMax), ZMin(ZMin), ZMax(ZMax), 
-    box(int3(nx, ny, nz), double3(XMin, YMin, ZMin), double3(XMax, YMax, ZMax)) 
+    pipic(string solverName, int nx, double XMin, double XMax, int ny = 1, double YMin = -0.5, double YMax = 0.5, int nz = 1, double ZMin = -0.5, double ZMax = 0.5):
+    nx(nx), ny(ny), nz(nz), XMin(XMin), XMax(XMax), YMin(YMin), YMax(YMax), ZMin(ZMin), ZMax(ZMax),
+    box(int3(nx, ny, nz), double3(XMin, YMin, ZMin), double3(XMax, YMax, ZMax))
     {
         Solver = nullptr;
         if(solverName == "fourier_boris") Solver = new fourier_boris_solver(box);
         if(solverName == "ec") Solver = new ec_solver(box);
         if(solverName == "ec2") Solver = new ec2_solver(box);
+        if(solverName == "electrostatic_1d") Solver = new ES1DPicSolver(box);
         if(Solver == nullptr){ pipic_log.message("pi-PIC init() error: unknown solver '" + solverName + "'.", true); exit(0);}
         Field = Solver->Field;
         Ensemble = Solver->Ensemble;
@@ -58,15 +60,7 @@ struct pipic
     }
     void pyParticleLoop(string typeName, int64_t handler, int64_t dataDouble, int64_t dataInt)
     {
-        void(*handler_)(double*, double*, double*, unsigned long long int*, double*, int*) = (void(*)(double*, double*, double*, unsigned long long int*, double*, int*))handler;
-        double* dataDouble_ = nullptr; if(dataDouble != 0) dataDouble_ = (double*)dataDouble;
-        int* dataInt_ = nullptr; if(dataInt != 0) dataInt_ = (int*)dataInt;
-
-        int typeIndex = Ensemble->getTypeIndex(typeName);
-        for(ensemble::nonOmpIterator iP = Ensemble->begin(typeIndex); iP < Ensemble->end(); iP++){
-            particle *P = &*iP;
-            handler_(&(P->r.x), &(P->p.x), &(P->w), &(P->id), dataDouble_, dataInt_);
-        }
+        Ensemble->singleThreadParticleLoop(handler, typeName, dataDouble, dataInt);
     }
     void pyFieldLoop(int64_t handler, int64_t dataDouble = 0, int64_t dataInt = 0, bool useOmp = false){
         Field->fieldLoop(handler, dataDouble, dataInt, useOmp);
@@ -75,12 +69,15 @@ struct pipic
         Field->customFieldLoop(numberOfIterations, it2coord, field2data, dataDouble, dataInt);
     }
     void pyAdvance(double timeStep, int numberOfIterations = 1, bool useOmp = true){
+        Solver->preStep(timeStep);   
         for(int iIt = 0; iIt < numberOfIterations; iIt++) {
             Ensemble->advanceWithOmp = useOmp;
             Solver->advance(timeStep);
             Ensemble->Manager.iterationEnd(box.ng);
             pipic_log.saveBuffer();
         }
+        Solver->postStep(timeStep);   
+
     }
     void pyLogPolicy(bool logToFile = true, bool logToScreen = true){
         pipic_log.logToFile = logToFile;
@@ -100,13 +97,36 @@ struct pipic
     int getTypeIndex(string typeName){
         return Ensemble->getTypeIndex(typeName);
     }
-    void addHandler(string name, string subject, int64_t handler, int64_t dataDouble = 0, int64_t dataInt = 0){
+    void addHandler(string name, string subject = "", int64_t handler = 0, int64_t field_handler = 0, int64_t dataDouble = 0, int64_t dataInt = 0){
         double* dataDouble_ = nullptr; if(dataDouble != 0) dataDouble_ = (double*)dataDouble;
         int* dataInt_ = nullptr; if(dataInt != 0) dataInt_ = (int*)dataInt;
-        Ensemble->Manager.addCellHandler(name, subject, handler, dataDouble_, dataInt_);
+
+        if(field_handler != 0){
+            Ensemble->Manager.addFieldHandler(name, "fields", field_handler, dataDouble, dataInt); 
+        }
+        if (handler != 0){
+                Ensemble->Manager.addCellHandler(name, subject, handler, dataDouble_, dataInt_);    
+        }    
     }
-    int64_t ensembleData(){ 
+    int64_t ensembleData(){
         return int64_t(Ensemble->cell);
+    }
+    int64_t simulationBoxAddress(){
+        simulationBox *sbox = &Ensemble->box;
+        return int64_t(sbox);
+    }
+    void en_corr_type(int correction_type){
+        if(Solver->name == "ec"){
+            ec_solver *solver = dynamic_cast<ec_solver*>(Solver);
+            solver->en_corr_type = correction_type;
+            return;
+        }
+        if(Solver->name == "ec2"){
+            ec2_solver *solver = dynamic_cast<ec2_solver*>(Solver);
+            solver->en_corr_type = correction_type;
+            return;
+        }
+        cout << "pi-PIC error: en_corr_type() is only applicable to ec and ec2 solvers.";
     }
 };
 

@@ -23,14 +23,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "~3.13.0-0"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest, macos-latest]
         compiler: [gcc, clang]
         exclude:
           - os: ubuntu-latest
             compiler: clang
-          - os: macos-latest
-            python-version: ~3.13.0-0
         include:
           - os: ubuntu-latest
             INSTALL_DEPS: sudo apt-get install -y libfftw3-dev
@@ -53,15 +51,12 @@ jobs:
             CC: clang
             CXX: clang++
 
-    continue-on-error: >-
-      ${{ contains(matrix.python-version, '~') }}
-      
     steps:
       - name: Checkout project
         uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'  # Cache pip dependencies
@@ -87,7 +82,7 @@ jobs:
       - name: Test package
         run: python -m unittest
 
-  dist:
+  dist-checks:
     name: Build and inspect distribution
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -106,7 +101,7 @@ jobs:
 
   pass:
     if: always()
-    needs: [checks, dist]
+    needs: [checks, dist-checks]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
