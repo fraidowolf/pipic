@@ -133,7 +133,7 @@ for ai,i in enumerate(ii):
     z_axis,y_axis,p_axis = a
     z_axis += i*100*dt*c*Tr 
 
-    im = ax[ai].pcolormesh(z_axis,y_axis[32:],rho[32:,:]/1e18,vmin=rhovmin,vmax=rhovmax,shading='nearest',cmap='RdYlBu_r')
+    im = ax[ai].pcolormesh(z_axis,y_axis[32:],rho[32:,:]/1e18,vmin=rhovmin,vmax=rhovmax,shading='nearest',cmap='RdYlBu_r',rasterized=True)
 
     ax_twinx = ax[ai].twinx()
     ax_twinx.plot(z_axis,Ez[32,:],'-',lw=0.8,color='black',label=r'$\pi$-PIC')
@@ -160,7 +160,7 @@ for ai,i in enumerate(ii):
     upramp_pos_pipic = Lx/2
     x = f.getAxis('x')*Lr  + Lr*x_moved - Lr*Lx/2 - Lr*(upramp_pos_smilei - upramp_pos_pipic)
 
-    im = ax[ai].pcolormesh(x,y_axis[:32],-Nr*Rho[:,:32].T/1e18,vmin=rhovmin,vmax=rhovmax,shading='nearest',cmap='RdYlBu_r')
+    im = ax[ai].pcolormesh(x,y_axis[:32],-Nr*Rho[:,:32].T/1e18,vmin=rhovmin,vmax=rhovmax,shading='nearest',cmap='RdYlBu_r',rasterized=True)
     ax_twinx.plot(x,Er*Ex[:,32],'--',lw=0.8,color='tab:green')
     ax_twinx.set_ylim(-3e7,3e7)
 
@@ -291,6 +291,6 @@ ax_ekin[0].tick_params(axis='x',labelbottom=False)
 #plt.tight_layout()
 fig.patch.set_facecolor('red')
 fig.patch.set_alpha(0.)
-plt.savefig('im_.png',dpi=900,transparent=True)
+plt.savefig('im_.pdf',dpi=300,transparent=True)
 
 

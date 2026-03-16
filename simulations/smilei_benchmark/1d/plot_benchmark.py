@@ -46,7 +46,7 @@ dt = dx/4         # timestep
 
 
 figw = style.figsize['inch']['double_column_width']*0.6
-fig, ax = plt.subplots(2,2,figsize=(figw,figw*0.8))
+fig, ax = plt.subplots(2,2,figsize=(figw,figw*0.6))
 cmap = mpl.cm.get_cmap('coolwarm')
 colors_pp = [cmap(i) for i in np.linspace(0.,1,4)] #['tab:blue','tab:orange','tab:green','tab:red']
 
@@ -184,14 +184,14 @@ ax[1,1].text(0.05,0.87,t[3],transform=ax[1,1].transAxes)
 
 
 
-fig.legend(frameon=False,ncol=2, bbox_to_anchor=(1.0, 1.15))
+fig.legend(frameon=False,ncol=2, bbox_to_anchor=(1.0, 1.2))
 
 mpl.rcParams["figure.constrained_layout.use"] = False
 
 plt.subplots_adjust(wspace=0.05, hspace=0.05,top=10)
 
 #plt.tight_layout()
-plt.savefig('im.png',dpi=600,bbox_inches='tight')
+plt.savefig('im.pdf',dpi=600,bbox_inches='tight')
 
 
 

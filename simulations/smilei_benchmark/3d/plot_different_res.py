@@ -151,4 +151,4 @@ ax[0].tick_params(axis='x',labelbottom=False)
 ax[0].text(0.03, 0.85, r'$\pi$-PIC',transform=ax[0].transAxes)
 ax[1].text(0.03, 0.85, r'Smilei',transform=ax[1].transAxes)
 
-plt.savefig('res_compare.png')
+plt.savefig('res_compare.pdf')
