@@ -8,6 +8,7 @@ from numba import cfunc, carray
 import os, time
 from pipic.extensions import qed_gonoskov2015, qed_volokitin2023
 import math
+import sys
 
 # ===========================SIMULATION INITIALIZATION===========================
 gamma = 2e5
@@ -159,6 +160,8 @@ def remove_low_en_ph():
 # ===============================SIMULATION======================================
 N0 = get_N_e_ep()
 Nsteps = round(t_sim / time_step)
+default_steps = Nsteps
+Nsteps = int(sys.argv[1]) if len(sys.argv) > 1 else default_steps
 for i in range(Nsteps):
     # sim.field_loop(handler=setField_callback.address)
     sim.advance(time_step=time_step, number_of_iterations=1)

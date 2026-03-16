@@ -230,7 +230,8 @@ axs[1].set_ylim(0,1.5*density)
 
 
 #===============================SIMULATION======================================
-s = 2000
+default_steps = 2000
+s = int(sys.argv[1]) if len(sys.argv) > 1 else default_steps
 u = np.empty((s//20,2))
 count = 0
 for i in range(s):

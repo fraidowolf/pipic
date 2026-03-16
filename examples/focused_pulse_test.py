@@ -7,6 +7,7 @@ import math, os, time
 import numpy as np
 from pipic import consts, types
 import numba
+import sys
 
 #============ setting the simulation box ============
 wavelength = 1e-4
@@ -69,6 +70,8 @@ ax.ticklabel_format(axis='both', scilimits=(0,0), useMathText=True)
 # =============== simulation =====================
 time_step = 0.125*wavelength/consts.light_velocity
 frames = 100
+default_steps = frames
+frames = int(sys.argv[1]) if len(sys.argv) > 1 else default_steps
 output_folder = 'test_focused_pulse_output'
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)

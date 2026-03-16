@@ -136,8 +136,9 @@ fig.colorbar(E_plot,ax=axs)
 
 #===============================SIMULATION======================================
 dataInt = np.zeros((1, ), dtype=np.intc) # data for passing the iteration number
-s = 1000
-u = np.empty((s//20,2))
+default_steps = 1000
+s = int(sys.argv[1]) if len(sys.argv) > 1 else default_steps
+u = np.empty((s//20+1,2))
 count = 0
 for i in range(s):
     dataInt[0] = i

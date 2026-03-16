@@ -4,6 +4,7 @@ import numpy as np
 from numba import cfunc, carray
 from pipic.extensions import moving_window
 import matplotlib.pyplot as plt
+import sys
 
 # --------------------- simulation variables ----------------------
 temperature = 1e-6 * consts.electron_mass * consts.light_velocity**2
@@ -18,6 +19,8 @@ field_amplitude = 0.01 * 4 * np.pi * (xmax - xmin) * consts.electron_charge * de
 nx, ny, nz = 16, 16, 128
 timestep = plasma_period / 64
 simulation_steps = int(2 * plasma_period / timestep)
+default_steps = simulation_steps
+simulation_steps = int(sys.argv[1]) if len(sys.argv) > 1 else default_steps
 
 # --------------------- initial state functions ----------------------
 @cfunc(types.add_particles_callback)

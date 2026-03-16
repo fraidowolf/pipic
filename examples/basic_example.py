@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numba import cfunc, carray
 import os, time
+import sys
 
 
 # ===========================SIMULATION INITIALIZATION===========================
@@ -127,7 +128,8 @@ output_folder = "basic_example_output"
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 time_start = time.time()
-s = 64
+default_steps = 64
+s = int(sys.argv[1]) if len(sys.argv) > 1 else default_steps
 for i in range(s):
     plot_xpx()
     plot_Ex()

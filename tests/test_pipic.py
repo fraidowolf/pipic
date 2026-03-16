@@ -43,8 +43,8 @@ SOLVERS = [
 ]
 
 
-def make_script_test(filepath, source_dir, timeout, test_prefix, extra_args=None):
-    """Return a test method that runs *filepath* for up to *timeout* seconds."""
+def make_script_test(filepath, source_dir, test_prefix, extra_args=None):
+    """Return a test method that runs *filepath* and expects clean exit."""
     filename = os.path.basename(filepath)
 
     def test_method(self):
@@ -55,25 +55,20 @@ def make_script_test(filepath, source_dir, timeout, test_prefix, extra_args=None
                 src = os.path.join(source_dir, f)
                 if os.path.isfile(src):
                     shutil.copy2(src, tmpdir)
-            try:
-                command = [sys.executable, filepath]
-                if extra_args:
-                    command.extend(extra_args)
-                result = subprocess.run(
-                    command,
-                    timeout=timeout,
-                    capture_output=True,
-                    text=True,
-                    cwd=tmpdir,
-                )
-                self.assertEqual(
-                    result.returncode, 0,
-                    msg=f"{filename} exited with code {result.returncode}:\n{result.stderr}",
-                )
-                print(result.returncode)
-            except subprocess.TimeoutExpired:
-                # Still running after timeout — considered a pass
-                pass
+            command = [sys.executable, filepath]
+            if extra_args:
+                command.extend(extra_args)
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                cwd=tmpdir,
+            )
+            self.assertEqual(
+                result.returncode, 0,
+                msg=f"{filename} exited with code {result.returncode}:\n{result.stderr}",
+            )
+            print(result.returncode)
         # tmpdir and all created files are deleted here
 
     stem = os.path.splitext(filename)[0]
@@ -93,11 +88,31 @@ class TestExamples(unittest.TestCase):
     pass
 
 
+EXAMPLE_TEST_EXTRA_ARGS = {
+    'basic_example.py': ['1'],
+    'basic_example_3d.py': ['1'],
+    'energy_conservation.py': ['1'],
+    'focused_pulse_test.py': ['1'],
+    'laser_solid_interaction.py': ['1'],
+    'plasma_oscillation.py': ['1'],
+    'qed_gonoskov2015_test.py': ['1'],
+    'qed_volokitin2023_test.py': ['1'],
+    'x_converter_c_test.py': ['1'],
+    'x_reflector_c_test.py': ['1'],
+    'x_reflector_py_test.py': ['1'],
+}
+
+
 for _filename in EXAMPLE_FILES:
     _filepath = os.path.join(EXAMPLES_DIR, _filename)
     _test_name = f'test_example_{os.path.splitext(_filename)[0]}'
     setattr(TestExamples, _test_name,
-            make_script_test(_filepath, EXAMPLES_DIR, timeout=10, test_prefix='test_example_'))
+            make_script_test(
+                _filepath,
+                EXAMPLES_DIR,
+                test_prefix='test_example_',
+                extra_args=EXAMPLE_TEST_EXTRA_ARGS.get(_filename),
+            ))
 
 
 class TestExtensions(unittest.TestCase):
@@ -109,7 +124,12 @@ for _subdir, _filename in EXTENSION_TEST_FILES:
     _filepath = os.path.join(_source_dir, _filename)
     _test_name = f'test_extension_{os.path.splitext(_filename)[0]}'
     setattr(TestExtensions, _test_name,
-            make_script_test(_filepath, _source_dir, timeout=10, test_prefix='test_extension_'))
+            make_script_test(
+                _filepath,
+                _source_dir,
+                test_prefix='test_extension_',
+                extra_args=['1'],
+            ))
 
 
 class TestSolvers(unittest.TestCase):
@@ -124,9 +144,8 @@ for _solver in SOLVERS:
         make_script_test(
             SOLVER_TEST_SCRIPT,
             EXAMPLES_DIR,
-            timeout=10,
             test_prefix='test_solver_',
-            extra_args=['--solver', _solver],
+            extra_args=['--solver', _solver, '--steps', '1'],
         ),
     )
 

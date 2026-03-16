@@ -8,6 +8,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 from numba import cfunc, carray, types as nbt
 import os
+import sys
 
 
 # ===========================SIMULATION INITIALIZATION===========================
@@ -267,8 +268,10 @@ outputFolder = "laser_solid_interaction_output"
 if not os.path.exists(outputFolder):
     os.makedirs(outputFolder)
 data_int = np.zeros((1,), dtype=np.intc)  # data for passing the iteration number
-for i in range(figStride * 21 + 1):
-    print(i, "/", figStride * 21 + 1)
+default_steps = figStride * 21 + 1
+s = int(sys.argv[1]) if len(sys.argv) > 1 else default_steps
+for i in range(s):
+    print(i, "/", s)
     data_int[0] = i
     sim.field_loop(handler=field_callback.address, data_int=pipic.addressof(data_int), use_omp=True)
     if i % figStride == 0:

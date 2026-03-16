@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numba import cfunc, carray
 import os
+import sys
 
 
 # ===========================SIMULATION INITIALIZATION===========================
@@ -123,11 +124,13 @@ def plot_Ex():
 outputFolder = "plasma_oscillation_output"
 if not os.path.exists(outputFolder):
     os.makedirs(outputFolder)
-for i in range(32):
+default_steps = 32
+s = int(sys.argv[1]) if len(sys.argv) > 1 else default_steps
+for i in range(s):
     sim.advance(time_step=time_step, number_of_iterations=2)
     plot_xpx()
     plot_Ex()
     fig.savefig(outputFolder + "/im" + str(i) + ".png")
     if i == 25:
         fig.savefig(outputFolder + "/fig2.pdf")
-    print(i, "/", 32)
+    print(i, "/", s)

@@ -4,6 +4,7 @@ from pipic.extensions import x_converter_c
 from numba import cfunc, carray
 import matplotlib.pyplot as plt
 import math, numpy, os, time
+import sys
 
 
 # ===========================SIMULATION INITIALIZATION===========================
@@ -158,6 +159,8 @@ outputFolder = "figs_x_converter_c"
 if not os.path.exists(outputFolder):
     os.makedirs(outputFolder)
 i_max = 32
+i_default = i_max
+i_max = int(sys.argv[1]) if len(sys.argv) > 1 else i_default
 time_start = time.time()
 for i in range(i_max):
     sim.advance(time_step=time_step, number_of_iterations=8)

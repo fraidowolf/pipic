@@ -13,6 +13,12 @@ parser.add_argument(
     default="electrostatic_1d",
     help="Solver to use.",
 )
+parser.add_argument(
+    "--steps",
+    type=int,
+    default=None,
+    help="Number of simulation steps.",
+)
 args = parser.parse_args()
 solver_name = args.solver
 
@@ -138,7 +144,8 @@ output_folder = f"basic_example_output_{solver_name}"
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 time_start = time.time()
-s = 64
+default_steps = 64
+s = args.steps if args.steps is not None else default_steps
 for i in range(s):
     plot_xpx()
     plot_Ex()

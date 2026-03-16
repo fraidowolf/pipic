@@ -162,7 +162,8 @@ if __name__ == '__main__':
                     data_int=pipic.addressof(data_int),)
     
     #-----------------------run simulation-------------------------
-    s = int((end_of_plasma+zmax)/consts.light_velocity/timestep) # number of steps in the simulation 
+    default_steps = int((end_of_plasma+zmax)/consts.light_velocity/timestep) # number of steps in the simulation
+    s = int(sys.argv[1]) if len(sys.argv) > 1 else default_steps
     checkpoint = 10
 
     fig, ax = plt.subplots(2, 1, figsize=(5, 5))

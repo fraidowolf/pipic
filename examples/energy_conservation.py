@@ -4,6 +4,7 @@ from pipic import consts, types
 import matplotlib.pyplot as plt
 import numpy as np
 from numba import cfunc, carray
+import sys
 
 
 # ===========================SIMULATION INITIALIZATION===========================
@@ -143,12 +144,15 @@ def getFieldEnergy(sim):
 n_plasma_periods = 100  # number of plasma oscillations to be simulated
 experiment_duration = n_plasma_periods * plasma_period
 n_iterations = n_plasma_periods * iterations_period
+default_steps = n_iterations
+s = int(sys.argv[1]) if len(sys.argv) > 1 else default_steps
+n_iterations = s
 timeP = np.zeros((0,), dtype=np.double)
 Efield = np.zeros((0,), dtype=np.double)
 Etot = np.zeros((0,), dtype=np.double)
 E0 = 0
-for i in range(n_plasma_periods * iterations_period):
-    print(i, "/", n_plasma_periods * iterations_period)
+for i in range(s):
+    print(i, "/", s)
     Ek = getKineticEn(sim)
     Ef = getFieldEnergy(sim)
     if i == 0:
